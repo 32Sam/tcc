@@ -6,7 +6,7 @@ html, body {
 
 /* Background */
 body {
-  background-image: url(images/bg.jpg);
+  background-image: url("https://github.com/32Sam/tcc/blob/main/images/bg.jpg?raw=true");
   background-position: center;
   background-size: cover;
 }
@@ -198,3 +198,4 @@ body::before {
   border-radius: 12px;
   cursor: pointer;
 }
+
