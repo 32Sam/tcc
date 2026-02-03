@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Catálogo de Animes</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <button id="btn-top-animes">Top Animes</button>
+
+  <main class="hero" id="hero">
+    <h1>Descubra o anime ideal<br>para o seu gosto!</h1>
+
+    <div class="search-box">
+      <input type="text" id="searchInput" placeholder="Digite o nome do anime...">
+      <button id="btn-filtros">Filtros</button>
+    </div>
+
+    <div id="active-filters" class="active-filters" style="display:none;">
+      <span id="filters-list"></span>
+      <button id="clear-filters">Limpar</button>
+    </div>
+  </main>
+
+  <section class="catalog" id="catalog"></section>
+
+  <!-- MODAL FILTROS -->
+  <div class="modal" id="modal-filtros">
+    <div class="modal-content">
+      <h2>Selecione o gênero</h2>
+
+      <div class="genres">
+        <button data-genre="acao">Ação</button>
+        <button data-genre="aventura">Aventura</button>
+        <button data-genre="comedia">Comédia</button>
+        <button data-genre="drama">Drama</button>
+        <button data-genre="fantasia">Fantasia</button>
+        <button data-genre="musica">Música</button>
+        <button data-genre="romance">Romance</button>
+        <button data-genre="ficcao-cientifica">Ficção Científica</button>
+        <button data-genre="seinen">Seinen</button>
+        <button data-genre="shoujo">Shoujo</button>
+        <button data-genre="shounen">Shounen</button>
+        <button data-genre="slice-of-life">Slice of Life</button>
+        <button data-genre="esportes">Esportes</button>
+        <button data-genre="sobrenatural">Sobrenatural</button>
+        <button data-genre="suspense">Suspense</button>
+      </div>
+
+      <button class="close-modal" id="aplicar-filtros">Aplicar</button>
+    </div>
+  </div>
+
+<!-- MODAL DETALHES -->
+<div class="modal" id="modal-detalhes">
+  <div class="modal-content modal-detalhes-content">
+    <h2 id="detalhe-titulo"></h2>
+
+    <div class="detalhes-body">
+      <div class="detalhes-texto">
+        <p id="detalhe-score"></p>
+        <p id="detalhe-status"></p>
+        <p id="detalhe-episodios"></p>
+        <p id="detalhe-texto"></p>
+      </div>
+
+      <div class="detalhes-imagem">
+        <img id="detalhe-imagem">
+      </div>
+    </div>
+
+    <button class="close-modal" id="fechar-detalhes">Fechar</button>
+  </div>
+</div>
+
+
+  <!-- MODAL ANO -->
+  <div id="modal-ano" class="modal">
+    <div class="modal-content">
+      <button class="btn-voltar" onclick="voltar()">Fechar</button>
+      <h2>Escolha o ano</h2>
+
+      <div id="lista-anos"></div>
+
+      <div class="grafico-anos-container">
+        <h4>Anos com maior procura por animes</h4>
+        <canvas id="graficoAnos"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL TOP -->
+  <div id="modal-top" class="modal">
+    <div class="modal-content modal-top-layout">
+
+      <h2 id="titulo-top"></h2>
+
+      <div class="top-graficos">
+        <div class="grafico-barra">
+          <canvas id="graficoTop5"></canvas>
+        </div>
+
+        <div class="grafico-pizza">
+          <canvas id="graficoGeneros"></canvas>
+        </div>
+      </div>
+
+      <!-- 🔽 BOTÃO VOLTAR AGORA NO FINAL 🔽 -->
+      <button class="btn-voltar" onclick="voltar()">Voltar</button>
+
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
