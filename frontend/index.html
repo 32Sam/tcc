@@ -7,14 +7,19 @@
 </head>
 <body>
 
-  <button id="btn-top-animes">Top Animes</button>
+<div class="top-menu">
+  <button id="btn-top-animes">Ranking Anual</button>
+  <button id="btn-popularidade">Análise de Popularidade</button>
+  <button id="btn-calendario">Calendário</button>
+</div>
 
   <main class="hero" id="hero">
     <h1>Descubra o anime ideal<br>para o seu gosto!</h1>
 
     <div class="search-box">
-      <input type="text" id="searchInput" placeholder="Digite o nome do anime...">
       <button id="btn-filtros">Filtros</button>
+      <input type="text" id="searchInput" placeholder="Digite o nome do anime...">
+      <button id="btn-buscar">Buscar</button>
     </div>
 
     <div id="active-filters" class="active-filters" style="display:none;">
@@ -29,7 +34,6 @@
   <div class="modal" id="modal-filtros">
     <div class="modal-content">
       <h2>Selecione o gênero</h2>
-
       <div class="genres">
         <button data-genre="acao">Ação</button>
         <button data-genre="aventura">Aventura</button>
@@ -47,22 +51,33 @@
         <button data-genre="sobrenatural">Sobrenatural</button>
         <button data-genre="suspense">Suspense</button>
       </div>
-
       <button class="close-modal" id="aplicar-filtros">Aplicar</button>
     </div>
   </div>
 
+  <!-- MODAL DETALHES -->
 <!-- MODAL DETALHES -->
 <div class="modal" id="modal-detalhes">
   <div class="modal-content modal-detalhes-content">
-    <h2 id="detalhe-titulo"></h2>
+
+    <div class="modal-header">
+      <h2 id="detalhe-titulo"></h2>
+
+      <div class="score-badge" id="scoreBadge">
+        <span id="scoreValue">0</span>
+      </div>
+    </div>
 
     <div class="detalhes-body">
       <div class="detalhes-texto">
-        <p id="detalhe-score"></p>
-        <p id="detalhe-status"></p>
-        <p id="detalhe-episodios"></p>
-        <p id="detalhe-texto"></p>
+        <div class="info-top">
+          <p id="detalhe-status"></p>
+          <p id="detalhe-episodios"></p>
+        </div>
+
+        <div class="sinopse-container">
+          <p id="detalhe-texto"></p>
+        </div>
       </div>
 
       <div class="detalhes-imagem">
@@ -70,49 +85,79 @@
       </div>
     </div>
 
-    <button class="close-modal" id="fechar-detalhes">Fechar</button>
+    <button id="fechar-detalhes">Fechar</button>
   </div>
 </div>
-
 
   <!-- MODAL ANO -->
   <div id="modal-ano" class="modal">
     <div class="modal-content">
-      <button class="btn-voltar" onclick="voltar()">Fechar</button>
       <h2>Escolha o ano</h2>
-
       <div id="lista-anos"></div>
 
       <div class="grafico-anos-container">
         <h4>Anos com maior procura por animes</h4>
         <canvas id="graficoAnos"></canvas>
       </div>
+
+      <button class="btn-voltar" onclick="voltar()">✕ Fechar</button>
     </div>
   </div>
 
   <!-- MODAL TOP -->
   <div id="modal-top" class="modal">
     <div class="modal-content modal-top-layout">
-
       <h2 id="titulo-top"></h2>
-
       <div class="top-graficos">
         <div class="grafico-barra">
           <canvas id="graficoTop5"></canvas>
         </div>
-
         <div class="grafico-pizza">
           <canvas id="graficoGeneros"></canvas>
         </div>
       </div>
-
-      <!-- 🔽 BOTÃO VOLTAR AGORA NO FINAL 🔽 -->
-      <button class="btn-voltar" onclick="voltar()">Voltar</button>
-
+      <button class="btn-voltar" onclick="voltar()">← Voltar</button>
     </div>
   </div>
 
+  <!-- MODAL POPULARIDADE -->
+  <div id="modal-popularidade" class="modal">
+    <div class="modal-content modal-pop-layout">
+      <h2>Análise de Popularidade (Últimos 10 anos)</h2>
+
+      <div class="pop-graficos">
+        <div class="grafico-barra">
+          <canvas id="graficoMaisBuscados"></canvas>
+        </div>
+        <div class="grafico-barra">
+          <canvas id="graficoMaisBemAvaliados"></canvas>
+        </div>
+      </div>
+
+      <button class="btn-voltar" onclick="voltar()">✕ Fechar</button>
+    </div>
+  </div>
+
+  <!-- MODAL CALENDÁRIO -->
+  <div id="modal-calendario" class="modal">
+    <div class="modal-content modal-cal-layout">
+      <h2 id="cal-titulo">Calendário</h2>
+
+      <div class="cal-nav">
+        <button id="cal-ontem">◀ Ontem</button>
+        <button id="cal-hoje">Hoje</button>
+        <button id="cal-amanha">Amanhã ▶</button>
+      </div>
+
+      <div id="cal-lista" class="cal-lista"></div>
+
+      <button class="btn-voltar" id="cal-voltar">✕ Fechar</button>
+    </div>
+  </div>
+
+  <!-- Scripts na ordem correta -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="script.js"></script>
+
 </body>
 </html>
