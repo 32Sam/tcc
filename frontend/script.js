@@ -1,728 +1,784 @@
-html, body {
-  margin: 0;
-  padding: 0;
+const searchInput = document.getElementById("searchInput");
+const catalog = document.getElementById("catalog");
+
+/* ===============================
+   CONTROLE DE TELA
+   =============================== */
+let telaAtual = null; // "ano" | "top" | null
+
+/* ===============================
+   FILTROS
+   =============================== */
+let selectedGenres = [];
+
+/* ELEMENTOS FILTROS ATIVOS */
+const activeFilters = document.getElementById("active-filters");
+const filtersList = document.getElementById("filters-list");
+const clearFiltersBtn = document.getElementById("clear-filters");
+
+
+/* MAPA DE GÊNEROS */
+const genreMap = {
+  acao: 1,
+  aventura: 2,
+  comedia: 4,
+  drama: 8,
+  fantasia: 10,
+  musica: 19,
+  romance: 22,
+  "ficcao-cientifica": 24,
+  shoujo: 25,
+  shounen: 27,
+  esportes: 30,
+  "slice-of-life": 36,
+  sobrenatural: 37,
+  seinen: 42,
+  suspense: 41
+};
+
+/* ===============================
+   MODAL FILTROS
+   =============================== */
+const btnFiltros = document.getElementById("btn-filtros");
+const modalFiltros = document.getElementById("modal-filtros");
+const genreButtons = document.querySelectorAll(".genres button");
+
+btnFiltros.addEventListener("click", () => {
+  modalFiltros.style.display = "flex";
+});
+
+genreButtons.forEach(btn => {
+  btn.addEventListener("click", () => {
+    const genero = btn.dataset.genre;
+
+    if (selectedGenres.includes(genero)) {
+      selectedGenres = selectedGenres.filter(g => g !== genero);
+      btn.classList.remove("ativo");
+    } else {
+      selectedGenres.push(genero);
+      btn.classList.add("ativo");
+    }
+
+    atualizarFiltrosAtivos();
+  });
+});
+
+/* ===============================
+   FILTROS ATIVOS (UI)
+   =============================== */
+function atualizarFiltrosAtivos() {
+  if (!selectedGenres.length) {
+    activeFilters.style.display = "none";
+    filtersList.innerHTML = "";
+    return;
+  }
+
+  activeFilters.style.display = "flex";
+  filtersList.innerHTML = selectedGenres
+    .map(g => g.replace("-", " "))
+    .join(", ");
 }
 
-/* Background */
-body {
-  background-image: url("https://github.com/32Sam/tcc/blob/main/images/bg.jpg?raw=true");
-  background-position: center;
-  background-size: cover;
-  background-repeat: no-repeat;
-  background-attachment: fixed; /* 👈 ESSA LINHA RESOLVE */
-  overflow-x: hidden;
+clearFiltersBtn.addEventListener("click", () => {
+  selectedGenres = [];
+  genreButtons.forEach(btn => btn.classList.remove("ativo"));
+  atualizarFiltrosAtivos();
+  buscarAnimes();
+});
+
+/* ===============================
+   BUSCA (ENTER + FILTROS)
+   =============================== */
+searchInput.addEventListener("keydown", e => {
+  if (e.key === "Enter") buscarAnimes();
+});
+
+document.getElementById("aplicar-filtros").addEventListener("click", () => {
+  modalFiltros.style.display = "none";
+  atualizarFiltrosAtivos();
+  buscarAnimes();
+});
+
+async function buscarAnimes() {
+  const termo = searchInput.value.trim();
+
+  if (!termo && !selectedGenres.length) {
+    catalog.innerHTML =
+      "<p style='color:white'>Digite algo ou selecione um gênero.</p>";
+    return;
+  }
+
+  try {
+    await fetch("http://127.0.0.1:5000/log-search", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        term: termo,
+        genres: selectedGenres
+      })
+    });
+  } catch (err) {
+    console.warn("Falha ao registrar busca:", err);
+  }
+
+  catalog.innerHTML = "<p style='color:white'>Carregando...</p>";
+
+  const genreIds = selectedGenres
+    .map(g => genreMap[g])
+    .filter(Boolean)
+    .join(",");
+
+  let url = `https://api.jikan.moe/v4/anime?limit=14&sfw=true`;
+  if (termo) url += `&q=${encodeURIComponent(termo)}`;
+  if (genreIds) url += `&genres=${genreIds}`;
+
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    renderizarResultados(data.data || []);
+  } catch (err) {
+    catalog.innerHTML =
+      "<p style='color:white'>Erro ao buscar animes.</p>";
+    console.error(err);
+  }
 }
 
-/* Filtro escuro */
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  background-color: rgba(0, 0, 0, 0.7);
-  z-index: 0;
-  pointer-events: none;
+function renderizarResultados(animes) {
+  catalog.innerHTML = "";
+
+  if (!animes.length) {
+    catalog.innerHTML =
+      "<p style='color:white'>Nenhum resultado encontrado.</p>";
+    catalog.scrollIntoView({ behavior: "smooth" });
+    btnInicio.style.display = "block";
+    return;
+  }
+
+  animes.forEach(anime => {
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = `
+      <img src="${anime.images.jpg.image_url}">
+      <h3>${anime.title}</h3>
+    `;
+    card.onclick = () => abrirDetalhes(anime);
+    catalog.appendChild(card);
+  });
+
+  catalog.scrollIntoView({ behavior: "smooth" });
 }
 
-/* HERO */
-.hero {
-  position: relative;
-  z-index: 1;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  color: white;
+/* ===============================
+   MODAL DETALHES
+   =============================== */
+const modalDetalhes = document.getElementById("modal-detalhes");
+const fecharDetalhes = document.getElementById("fechar-detalhes");
+
+fecharDetalhes.onclick = () => {
+  modalDetalhes.style.display = "none";
+};
+
+function abrirDetalhes(anime) {
+
+  document.getElementById("detalhe-titulo").textContent = anime.title;
+
+  document.getElementById("detalhe-texto").innerHTML =
+    anime.synopsis || "Sinopse não disponível.";
+
+  document.getElementById("detalhe-imagem").src =
+    anime.images.jpg.image_url;
+
+  document.getElementById("detalhe-status").textContent =
+    `📺 Status: ${anime.status ?? "N/A"}`;
+
+  document.getElementById("detalhe-episodios").textContent =
+    `🎞️ Episódios: ${anime.episodes ?? "N/A"}`;
+
+  /* ===== SCORE BADGE ANIMADA ===== */
+
+  const score = anime.score ?? 0;
+  const badge = document.getElementById("scoreBadge");
+  const scoreValue = document.getElementById("scoreValue");
+
+  scoreValue.textContent = anime.score ?? "N/A";
+
+  // reset visual
+  badge.style.setProperty("--score", 0);
+
+  let current = 0;
+  const target = score * 10;
+
+  const interval = setInterval(() => {
+    current += 2;
+
+    if (current >= target) {
+      current = target;
+      clearInterval(interval);
+    }
+
+    badge.style.setProperty("--score", current);
+  }, 15);
+
+  /* ===== COR DINÂMICA OPCIONAL ===== */
+
+  if (score >= 8) {
+    badge.style.boxShadow = "0 0 15px rgba(0,255,150,0.6)";
+  } else if (score >= 6) {
+    badge.style.boxShadow = "0 0 15px rgba(255,200,0,0.6)";
+  } else {
+    badge.style.boxShadow = "0 0 15px rgba(255,80,80,0.6)";
+  }
+
+  modalDetalhes.style.display = "flex";
 }
 
-.hero h1 {
-  font-size: 2.8rem;
-  margin-bottom: 35px;
-  font-weight: 600;
-  letter-spacing: 1px;
-  text-shadow: 
-    0 0 10px rgba(255,255,255,0.1),
-    0 10px 40px rgba(0,0,0,0.8);
-}
+/* ===============================
+   TOP ANIMES
+   =============================== */
+const btnTopAnimes = document.getElementById("btn-top-animes");
+const modalAno = document.getElementById("modal-ano");
+const modalTop = document.getElementById("modal-top");
 
-.catalog:empty {
-  display: none;
-}
+btnTopAnimes.onclick = () => {
+  bloquearBotoesMenu(true);
+  modalAno.style.display = "flex";
+  modalTop.style.display = "none";
+  telaAtual = "ano";
 
-/* Busca */
-.search-box {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 12px;
-  border-radius: 40px;
-  background: rgba(255,255,255,0.08);
-  backdrop-filter: blur(10px);
-  box-shadow: 0 15px 40px rgba(0,0,0,0.4);
-}
+  const lista = document.getElementById("lista-anos");
+  lista.innerHTML = "";
 
-.search-box input {
-  background: transparent;
-  color: white;
-  width: 300px;
-  padding: 12px 15px;
-  border-radius: 25px;
-  border: none;
-  outline: none;
-  font-size: 1rem;
-}
+  for (let ano = 2025; ano >= 2012; ano--) {
+    const btn = document.createElement("button");
+    btn.textContent = ano;
+    btn.onclick = () => carregarTopAnimes(ano);
+    lista.appendChild(btn);
+  }
 
-.search-box button {
-  padding: 10px 20px;
-  border-radius: 30px;
-  border: none;
-  cursor: pointer;
-  font-weight: 500;
-  transition: all 0.25s ease;
-  background: rgba(255,255,255,0.15);
-  color: white;
-  backdrop-filter: blur(6px);
-}
+  setTimeout(() => {
+    carregarGraficoAnosMaisPopulares();
+  }, 100);
+};
 
-.search-box button:hover {
-  background: #f5c518;
-  color: black;
-  transform: translateY(-2px);
-}
+/* ===============================
+   GRÁFICOS TOP ANIMES
+   =============================== */
+let graficoTop5 = null;
+let graficoGeneros = null;
 
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  background: linear-gradient(
-    to bottom,
-    rgba(0,0,0,0.8) 0%,
-    rgba(0,0,0,0.6) 40%,
-    rgba(0,0,0,0.9) 100%
+async function carregarTopAnimes(ano) {
+  modalAno.style.display = "none";
+  modalTop.style.display = "flex";
+  telaAtual = "top";
+
+  document.getElementById("titulo-top").textContent =
+    `Top Animes de ${ano}`;
+
+  const res = await fetch(
+    `https://api.jikan.moe/v4/anime?start_date=${ano}-01-01&end_date=${ano}-12-31&order_by=members&sort=desc&limit=5`
   );
-  z-index: 0;
-  pointer-events: none;
-}
+  const data = await res.json();
+  const animes = data.data || [];
 
-.search-box input::placeholder {
-  color: rgba(255,255,255,0.6);
-}
+  const canvasTop = document.getElementById("graficoTop5");
 
-.hero {
-  animation: fadeHero 1.2s ease;
-}
+  if (canvasTop && window.Chart) {
+    if (graficoTop5) graficoTop5.destroy();
 
-@keyframes fadeHero {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
+graficoTop5 = new Chart(canvasTop, {
+  type: "bar",
+  data: {
+    labels: animes.map(a => a.title),
+    datasets: [{
+      label: "Popularidade (members)",
+      data: animes.map(a => a.members),
+      backgroundColor: "#f5c518",
+      borderRadius: 6
+    }]
+  },
+  options: {
+    plugins: {
+      legend: {
+        labels: {
+          color: "#ffffff"
+        }
+      }
+    },
+    scales: {
+      x: {
+        ticks: {
+          color: "#ffffff"
+        }
+      },
+      y: {
+        ticks: {
+          color: "#ffffff"
+        }
+      }
+    }
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+});
   }
-}
 
-/* MODAL */
-/* MODAL PADRÃO */
-.modal {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.75);
-  display: none;
-  align-items: center;
-  justify-content: center;
-  z-index: 20;
-}
+  const canvasGen = document.getElementById("graficoGeneros");
 
-/* MODAL DETALHES ACIMA DE TUDO */
-#modal-detalhes {
-  z-index: 100;
-}
+  if (canvasGen && window.Chart) {
+    const contadorGeneros = {};
 
-.modal-content {
-  background: #111;
-  color: white;
-  padding: 30px;
-  border-radius: 12px;
-  width: 420px;
-  text-align: center;
-}
+    animes.forEach(anime => {
+      anime.genres.forEach(g => {
+        contadorGeneros[g.name] =
+          (contadorGeneros[g.name] || 0) + 1;
+      });
+    });
 
-.genres {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  margin-bottom: 20px;
-}
+    const generosOrdenados = Object.entries(contadorGeneros)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3);
 
-.genres button {
-  padding: 12px 16px;
-  border-radius: 14px;
-  border: 1px solid rgba(255,255,255,0.08);
-  background: rgba(255,255,255,0.06);
-  color: #eaeaea;
-  cursor: pointer;
-  backdrop-filter: blur(6px);
-  transition: all 0.25s ease;
-  font-weight: 500;
-  letter-spacing: 0.3px;
-}
+    if (graficoGeneros) graficoGeneros.destroy();
 
-/* Hover */
-.genres button:hover {
-  background: rgba(255,255,255,0.12);
-  transform: translateY(-3px);
-  box-shadow: 0 8px 20px rgba(0,0,0,0.4);
-}
-
-/* Quando ativo */
-.genres button.ativo {
-  background: linear-gradient(135deg, #f5c518, #ffdf60);
-  color: black;
-  font-weight: 600;
-  box-shadow: 0 0 15px rgba(245,197,24,0.6);
-  border: none;
-}
-
-/* Clique */
-.genres button:active {
-  transform: scale(0.95);
-}
-
-#aplicar-filtros {
-  margin-top: 25px;
-  padding: 12px 28px;
-  border-radius: 30px;
-  border: none;
-  font-weight: 600;
-  font-size: 0.95rem;
-  cursor: pointer;
-  background: linear-gradient(135deg, #f5c518, #ffdf60);
-  color: black;
-  letter-spacing: 0.5px;
-  transition: all 0.25s ease;
-  box-shadow: 0 8px 25px rgba(245,197,24,0.35);
-}
-
-/* Hover */
-#aplicar-filtros:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 12px 30px rgba(245,197,24,0.55);
-}
-
-/* Clique */
-#aplicar-filtros:active {
-  transform: scale(0.95);
-  box-shadow: 0 5px 15px rgba(245,197,24,0.4);
-}
-
-/* CATÁLOGO */
-.catalog {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 20px;
-  padding: 40px;
-}
-
-.card {
-  background: #111;
-  border-radius: 12px;
-  overflow: hidden;
-  color: white;
-  cursor: pointer;
-}
-
-.card img {
-  width: 100%;
-  height: 250px;
-  object-fit: cover;
-}
-
-.card h3 {
-  padding: 10px;
-  text-align: center;
-  font-size: 1rem;
-}
-
-/* BOTÃO VOLTAR AO TOPO */
-#btn-topo {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  border: none;
-  cursor: pointer;
-  background: white;
-  color: black;
-  font-size: 22px;
-  font-weight: bold;
-  display: none;
-  z-index: 30;
+    graficoGeneros = new Chart(canvasGen, {
+      type: "pie",
+      data: {
+        labels: generosOrdenados.map(g => g[0]),
+        datasets: [{
+          data: generosOrdenados.map(g => g[1])
+        }]
+      }
+    });
+  }
 }
 
 /* ===============================
-   ✅ MODAL DETALHES (APENAS INCLUSÃO/ATUALIZAÇÃO)
-   - badge circular de score
-   - fundo com leve gradiente
-   - efeito glassmorphism
-   - scroll customizado na sinopse
-=============================== */
+   BOTÃO VOLTAR
+   =============================== */
+function voltar() {
 
-/* mantém sua classe, só melhora visual */
-.modal-detalhes-content {
-  width: 900px;
-  max-width: 95%;
-  border-radius: 20px;
-  padding: 40px;
+  // CALENDÁRIO (fecha e libera)
+  if (telaAtual === "calendario") {
+    modalCalendario.style.display = "none";
+    telaAtual = null;
+    bloquearBotoesMenu(false);
+    return;
+  }
 
-  /* leve gradiente (você pediu) */
-  background: linear-gradient(145deg, rgba(20,20,20,0.92), rgba(12,12,12,0.85));
+  // POPULARIDADE (fecha e libera)
+  if (telaAtual === "popularidade") {
+    modalPopularidade.style.display = "none";
+    telaAtual = null;
+    bloquearBotoesMenu(false);
+    return;
+  }
 
-  /* glass */
-  border: 1px solid rgba(255,255,255,0.08);
-  box-shadow: 0 25px 60px rgba(0,0,0,0.6);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  // TOP (volta para seleção de ano — ainda NÃO libera)
+  if (telaAtual === "top") {
+    modalTop.style.display = "none";
+    modalAno.style.display = "flex";
+    telaAtual = "ano";
+    return;
+  }
 
-  animation: modalFade 0.25s ease;
-}
-
-@keyframes modalFade {
-  from { opacity: 0; transform: translateY(20px) scale(0.98); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-/* seu novo header do modal (título + badge) */
-.modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 18px;
-  margin-bottom: 22px;
-}
-
-#detalhe-titulo {
-  font-size: 2rem;
-  margin: 0;
-  font-weight: 600;
-  letter-spacing: 1px;
-}
-
-/* badge circular de score */
-.score-badge {
-  width: 74px;
-  height: 74px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-
-  background: rgba(245, 197, 24, 0.12);
-  border: 2px solid rgba(245, 197, 24, 0.55);
-  box-shadow: 0 12px 24px rgba(0,0,0,0.35);
-}
-
-.score-badge span {
-  font-weight: 800;
-  font-size: 1.1rem;
-  color: #f5c518;
-}
-
-/* corpo e imagem (mantém suas classes) */
-.detalhes-body {
-  display: flex;
-  gap: 40px;
-  align-items: flex-start;
-}
-
-.detalhes-texto {
-  flex: 1.3;
-  text-align: left;
-  font-size: 0.95rem;
-  line-height: 1.7;
-  color: #e6e6e6;
-}
-
-/* status e episódios no topo */
-.info-top {
-  display: flex;
-  gap: 18px;
-  flex-wrap: wrap;
-  margin-bottom: 12px;
-}
-
-#detalhe-status,
-#detalhe-episodios {
-  font-weight: 600;
-  margin: 0;
-  color: #f5c518;
-}
-
-/* sinopse com scroll bonito */
-.sinopse-container {
-  max-height: 260px;
-  overflow-y: auto;
-  padding-right: 10px;
-}
-
-/* scroll custom */
-.sinopse-container::-webkit-scrollbar {
-  width: 7px;
-}
-
-.sinopse-container::-webkit-scrollbar-track {
-  background: rgba(255,255,255,0.06);
-  border-radius: 10px;
-}
-
-.sinopse-container::-webkit-scrollbar-thumb {
-  background: rgba(245,197,24,0.75);
-  border-radius: 10px;
-}
-
-.sinopse-container::-webkit-scrollbar-thumb:hover {
-  background: rgba(245,197,24,0.95);
-}
-
-.detalhes-imagem img {
-  width: 260px;
-  border-radius: 16px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-}
-
-#fechar-detalhes {
-  margin-top: 30px;
-  padding: 10px 25px;
-  border-radius: 30px;
-  border: none;
-  background: #f5c518;
-  color: black;
-  font-weight: bold;
-  cursor: pointer;
-  transition: 0.2s ease;
-}
-
-#fechar-detalhes:hover {
-  transform: scale(1.05);
+  // ANO (fecha ranking anual totalmente e libera)
+  if (telaAtual === "ano") {
+    modalAno.style.display = "none";
+    telaAtual = null;
+    bloquearBotoesMenu(false);
+    return;
+  }
 }
 
 /* ===============================
-   RESTO DO SEU CSS ORIGINAL (SEM MEXER)
-=============================== */
+   GRÁFICO ANOS MAIS PROCURADOS
+   =============================== */
+let graficoAnosChart = null;
 
-.active-filters {
-  margin-top: 15px;
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  color: white;
-  font-size: 0.9rem;
+async function carregarGraficoAnosMaisPopulares() {
+  const cacheKey = "topAnosMaisProcurados";
+  const cache = localStorage.getItem(cacheKey);
+
+  if (cache) {
+    desenharGraficoAnos(JSON.parse(cache));
+    return;
+  }
+
+  const resultados = [];
+
+  for (let ano = 2016; ano <= 2025; ano++) {
+    const res = await fetch(
+      `https://api.jikan.moe/v4/anime?start_date=${ano}-01-01&end_date=${ano}-12-31&order_by=members&sort=desc&limit=25`
+    );
+    const data = await res.json();
+
+    const soma = (data.data || [])
+      .reduce((acc, a) => acc + (a.members || 0), 0);
+
+    resultados.push({ ano, total: soma });
+  }
+
+  resultados.sort((a, b) => b.total - a.total);
+  const top5 = resultados.slice(0, 5);
+
+  localStorage.setItem(cacheKey, JSON.stringify(top5));
+  desenharGraficoAnos(top5);
 }
 
-.active-filters span {
-  background: #1f1f1f;
-  padding: 6px 10px;
-  border-radius: 12px;
+function desenharGraficoAnos(dados) {
+  const ctx = document.getElementById("graficoAnos");
+  if (!ctx) return;
+
+  if (graficoAnosChart) graficoAnosChart.destroy();
+
+graficoAnosChart = new Chart(ctx, {
+  type: "bar",
+  data: {
+    labels: dados.map(d => d.ano),
+    datasets: [{
+      label: "Procura total (members)",
+      data: dados.map(d => d.total),
+      backgroundColor: "#f5c518",
+      borderRadius: 6
+    }]
+  },
+  options: {
+    plugins: {
+      legend: {
+        labels: {
+          color: "#ffffff"
+        }
+      }
+    },
+    scales: {
+      x: {
+        ticks: {
+          color: "#ffffff"
+        }
+      },
+      y: {
+        ticks: {
+          color: "#ffffff"
+        }
+      }
+    }
+  }
+});
+  }
+
+/* ===============================
+   POPULARIDADE COMPARATIVA
+   =============================== */
+
+const btnPopularidade = document.getElementById("btn-popularidade");
+const modalPopularidade = document.getElementById("modal-popularidade");
+
+let graficoMaisBuscados = null;
+let graficoMaisBemAvaliados = null;
+
+btnPopularidade.onclick = () => {
+  bloquearBotoesMenu(true);
+  modalPopularidade.style.display = "flex";
+  telaAtual = "popularidade";
+  carregarPopularidadeComparativa();
+};
+
+async function carregarPopularidadeComparativa() {
+
+  const anoAtual = new Date().getFullYear();
+  const anoInicial = anoAtual - 10;
+
+  const res = await fetch(
+    `https://api.jikan.moe/v4/anime?start_date=${anoInicial}-01-01&end_date=${anoAtual}-12-31&limit=25`
+  );
+
+  const data = await res.json();
+  const animes = data.data || [];
+
+  const topBuscados = [...animes]
+    .sort((a, b) => b.members - a.members)
+    .slice(0, 5);
+
+  if (graficoMaisBuscados) graficoMaisBuscados.destroy();
+
+graficoMaisBuscados = new Chart(
+  document.getElementById("graficoMaisBuscados"),
+  {
+    type: "bar",
+    data: {
+      labels: topBuscados.map(a => a.title),
+      datasets: [{
+        label: "Popularidade (members)",
+        data: topBuscados.map(a => a.members),
+        backgroundColor: "#f5c518",
+        borderRadius: 6
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          labels: {
+            color: "#ffffff"
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: {
+            color: "#dddddd"
+          },
+          grid: {
+            color: "rgba(255,255,255,0.05)"
+          }
+        },
+        y: {
+          ticks: {
+            color: "#dddddd"
+          },
+          grid: {
+            color: "rgba(255,255,255,0.05)"
+          }
+        }
+      }
+    }
+  }
+);
+
+  /* ===== MAIS BEM AVALIADOS (SCORE REAL DA API) ===== */
+
+  const resScore = await fetch(
+    `https://api.jikan.moe/v4/anime?order_by=score&sort=desc&limit=5&sfw=true`
+  );
+
+  const dataScore = await resScore.json();
+  const topScore = dataScore.data || [];
+
+  if (graficoMaisBemAvaliados) graficoMaisBemAvaliados.destroy();
+
+graficoMaisBemAvaliados = new Chart(
+  document.getElementById("graficoMaisBemAvaliados"),
+  {
+    type: "bar",
+    data: {
+      labels: topScore.map(a => a.title),
+      datasets: [{
+        label: "Melhor Avaliação (score)",
+        data: topScore.map(a => a.score),
+        backgroundColor: "#f5c518",
+        borderRadius: 6
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          labels: {
+            color: "#ffffff"
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: {
+            color: "#dddddd"
+          },
+          grid: {
+            color: "rgba(255,255,255,0.05)"
+          }
+        },
+        y: {
+          ticks: {
+            color: "#dddddd"
+          },
+          grid: {
+            color: "rgba(255,255,255,0.05)"
+          }
+        }
+      }
+    }
+  }
+);
+
 }
 
-.active-filters button {
-  background: transparent;
-  border: 1px solid white;
-  color: white;
-  padding: 6px 10px;
-  border-radius: 12px;
-  cursor: pointer;
+/* ===============================
+   VOLTAR
+   =============================== */
+
+function voltar() {
+
+  if (telaAtual === "popularidade") {
+    modalPopularidade.style.display = "none";
+    telaAtual = null;
+  }
+
+  else if (telaAtual === "top") {
+    modalTop.style.display = "none";
+    modalAno.style.display = "flex";
+    telaAtual = "ano";
+    return; // aqui não libera ainda
+  }
+
+  else if (telaAtual === "ano") {
+    modalAno.style.display = "none";
+    telaAtual = null;
+  }
+
+  bloquearBotoesMenu(false);
 }
 
-#btn-top-animes {
-  position: fixed;
-  top: 15px;
-  left: 15px;
-  padding: 10px 14px;
-  background: gold;
-  border-radius: 8px;
-  font-weight: bold;
-  border: none;
-  cursor: pointer;
-  z-index: 50;
+
+
+/* ===============================
+   FUNÇÃO PARA CONTROLE DOS BOTÕES PARA NÃO GERAR ERRO DE SOBREPOSIÇÃO)
+   =============================== */
+function bloquearBotoesMenu(bloquear) {
+
+  const botoes = [btnTopAnimes, btnPopularidade, btnCalendario];
+
+  botoes.forEach(btn => {
+    if (!btn) return; // segurança caso algum não exista
+
+    btn.disabled = bloquear;
+    btn.style.opacity = bloquear ? "0.5" : "1";
+    btn.style.cursor = bloquear ? "not-allowed" : "pointer";
+  });
+
 }
 
-#lista-anos button,
-#resultado-top div {
-  background: gold;
-  margin-top: 10px;
-  padding: 10px;
-  border-radius: 6px;
-  cursor: pointer;
+/* ===============================
+   CALENDÁRIO (ONTEM / HOJE / AMANHÃ)
+   =============================== */
+
+const btnCalendario = document.getElementById("btn-calendario");
+const modalCalendario = document.getElementById("modal-calendario");
+
+const calTitulo = document.getElementById("cal-titulo");
+const calLista = document.getElementById("cal-lista");
+
+const btnCalOntem = document.getElementById("cal-ontem");
+const btnCalHoje = document.getElementById("cal-hoje");
+const btnCalAmanha = document.getElementById("cal-amanha");
+
+let calOffset = 0; // -1 ontem, 0 hoje, +1 amanhã
+
+const diasEN = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+const diasPT = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
+
+function getDiaTarget(offset) {
+  const hoje = new Date();
+  const idx = (hoje.getDay() + offset + 7) % 7;
+  return { idx, en: diasEN[idx], pt: diasPT[idx] };
 }
 
-.btn-voltar {
-  margin-top: 35px;
-  padding: 10px 28px;
-  border-radius: 30px;
-  border: 1px solid rgba(255,255,255,0.12);
-  background: rgba(255,255,255,0.05);
-  color: #eaeaea;
-  font-weight: 500;
-  cursor: pointer;
-  backdrop-filter: blur(6px);
-  transition: all 0.25s ease;
-  letter-spacing: 0.5px;
+btnCalendario.onclick = () => {
+  bloquearBotoesMenu(true);
+  modalCalendario.style.display = "flex";
+  telaAtual = "calendario";
+  calOffset = 0;
+  carregarCalendarioDia(calOffset);
+};
+
+btnCalOntem.onclick = () => {
+  calOffset = -1;
+  carregarCalendarioDia(calOffset);
+};
+
+btnCalHoje.onclick = () => {
+  calOffset = 0;
+  carregarCalendarioDia(calOffset);
+};
+
+btnCalAmanha.onclick = () => {
+  calOffset = 1;
+  carregarCalendarioDia(calOffset);
+};
+
+async function carregarCalendarioDia(offset) {
+  const dia = getDiaTarget(offset);
+
+  calTitulo.textContent = `Calendário — ${dia.pt}`;
+  calLista.innerHTML = "<p style='color:white'>Carregando...</p>";
+
+  // Cache leve por dia (10 min)
+  const cacheKey = `cal-${dia.en}`;
+  const cacheRaw = localStorage.getItem(cacheKey);
+
+  if (cacheRaw) {
+    try {
+      const cache = JSON.parse(cacheRaw);
+      const age = Date.now() - cache.time;
+      if (age < 10 * 60 * 1000) { // 10 min
+        renderCalendario(cache.items);
+        return;
+      }
+    } catch (_) {}
+  }
+
+  try {
+    // Endpoint de schedule por dia (Jikan v4)
+    const url = `https://api.jikan.moe/v4/schedules/${dia.en}?sfw=true&limit=25`;
+    const res = await fetch(url);
+    const data = await res.json();
+
+    const items = data.data || [];
+    localStorage.setItem(cacheKey, JSON.stringify({ time: Date.now(), items }));
+
+    renderCalendario(items);
+  } catch (err) {
+    console.error(err);
+    calLista.innerHTML = "<p style='color:white'>Erro ao carregar o calendário.</p>";
+  }
 }
 
-.btn-voltar:hover {
-  background: rgba(255,255,255,0.15);
-  transform: translateY(-3px);
-  box-shadow: 0 12px 30px rgba(0,0,0,0.5);
+function renderCalendario(animes) {
+  calLista.innerHTML = "";
+
+  if (!animes.length) {
+    calLista.innerHTML = "<p style='color:white'>Nenhum lançamento encontrado para este dia.</p>";
+    return;
+  }
+
+  animes.forEach(anime => {
+    const titulo = anime.title || "Sem título";
+    const img = anime.images?.jpg?.image_url || "";
+
+    // horário (quando existir)
+    const b = anime.broadcast || {};
+    const hora = b.time ? `${b.time}${b.timezone ? " (" + b.timezone + ")" : ""}` : "Horário não informado";
+
+    // total de episódios (quando existir)
+    const eps = anime.episodes ?? "N/A";
+
+    const card = document.createElement("div");
+    card.className = "cal-card";
+    card.innerHTML = `
+      ${img ? `<img src="${img}" alt="${titulo}">` : ""}
+      <div>
+        <h4>${titulo}</h4>
+        <p>🕒 ${hora}</p>
+        <p>🎞️ Episódios: ${eps}</p>
+      </div>
+    `;
+
+    // opcional: clicar abre detalhes do mesmo modal de detalhes que você já tem
+    card.onclick = () => abrirDetalhes(anime);
+
+    calLista.appendChild(card);
+  });
 }
 
-.btn-voltar:active {
-  transform: scale(0.95);
-}
+const btnCalVoltar = document.getElementById("cal-voltar");
 
-/* ===== LAYOUT TOP ANIMES ===== */
+btnCalVoltar.addEventListener("click", () => {
+  modalCalendario.style.display = "none";
+  telaAtual = null;
+  bloquearBotoesMenu(false);
+});
 
-.modal-top-layout {
-  width: 800px;
-  max-width: 95%;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
+const btnBuscar = document.getElementById("btn-buscar");
 
-.top-graficos {
-  display: flex;
-  gap: 30px;
-  margin-top: 20px;
-  align-items: center;
-  justify-content: space-between;
-}
-
-/* Gráfico de barras (Top 5) */
-.grafico-barra {
-  flex: 2;
-}
-
-/* Gráfico de pizza (gêneros) */
-.grafico-pizza {
-  flex: 1;
-  max-width: 250px;
-}
-
-/* BOTÃO VOLTAR (TOP ANIMES) */
-.btn-voltar {
-  background: none;
-  border: none;
-  color: white;
-  cursor: pointer;
-  font-size: 0.95rem;
-  margin-top: 25px;
-  align-self: center;
-  opacity: 0.8;
-}
-
-.btn-voltar:hover {
-  opacity: 1;
-  text-decoration: underline;
-}
-
-#btn-popularidade {
-  position: fixed;
-  top: 15px;
-  left: 150px;
-  padding: 10px 14px;
-  background: gold;
-  border-radius: 8px;
-  font-weight: bold;
-  border: none;
-  cursor: pointer;
-  z-index: 50;
-}
-
-.grafico-pizza-pop {
-  margin-top: 30px;
-  max-width: 400px;
-  align-self: center;
-}
-
-#graficoGenerosPop {
-  height: 300px !important;
-}
-
-.modal-pop-layout {
-  width: 850px;
-  max-width: 95%;
-  padding: 40px 30px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.pop-graficos {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 40px; /* equilíbrio visual */
-  margin-top: 35px;
-  margin-bottom: 20px;
-}
-
-/* Containers individuais */
-.modal-pop-layout .grafico-barra {
-  width: 420px;
-  height: 300px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-/* ===== BOTÃO CALENDÁRIO ===== */
-#btn-calendario {
-  position: fixed;
-  top: 15px;
-  right: 15px;          /* fica no canto direito */
-  left: auto;           /* garante que não use o left */
-  padding: 10px 14px;
-  background: #1dcaff;
-  border-radius: 8px;
-  font-weight: bold;
-  border: none;
-  cursor: pointer;
-  z-index: 50;
-}
-
-/* ===== MODAL CALENDÁRIO ===== */
-.modal-cal-layout {
-  width: 1000px;
-  max-width: 95%;
-  padding: 50px 40px;
-  border-radius: 22px;
-  background: linear-gradient(145deg, #141414, #0f0f0f);
-  box-shadow: 0 30px 80px rgba(0,0,0,0.7);
-  backdrop-filter: blur(6px);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  animation: modalFade 0.25s ease;
-}
-
-.cal-nav {
-  display: flex;
-  gap: 12px;
-  margin: 15px 0 20px;
-}
-
-.cal-nav button {
-  padding: 10px 18px;
-  border-radius: 25px;
-  border: 1px solid rgba(255,255,255,0.08);
-  background: rgba(255,255,255,0.07);
-  color: white;
-  cursor: pointer;
-  font-weight: 500;
-  transition: all 0.25s ease;
-}
-
-.cal-nav button:hover {
-  background: rgba(255,255,255,0.15);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(0,0,0,0.4);
-}
-
-.cal-nav button:active {
-  transform: scale(0.95);
-}
-
-.cal-lista {
-  width: 100%;
-  max-height: 450px;
-  overflow-y: auto;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 18px;
-  padding: 10px;
-}
-
-/* Scroll personalizado */
-.cal-lista::-webkit-scrollbar {
-  width: 8px;
-}
-
-.cal-lista::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.cal-lista::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.15);
-  border-radius: 10px;
-}
-
-.cal-lista::-webkit-scrollbar-thumb:hover {
-  background: rgba(245,197,24,0.6);
-}
-
-/* Card de calendário */
-.cal-card {
-  background: linear-gradient(145deg, #1a1a1a, #131313);
-  border-radius: 16px;
-  padding: 14px;
-  display: flex;
-  gap: 14px;
-  align-items: center;
-  transition: all 0.25s ease;
-  border: 1px solid rgba(255,255,255,0.05);
-}
-
-.cal-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 15px 35px rgba(0,0,0,0.6);
-  border: 1px solid rgba(245,197,24,0.3);
-}
-
-.cal-card img {
-  width: 60px;
-  height: 85px;
-  object-fit: cover;
-  border-radius: 10px;
-  box-shadow: 0 6px 15px rgba(0,0,0,0.5);
-}
-
-.cal-card h4 {
-  margin: 0 0 6px;
-  font-size: 0.95rem;
-  line-height: 1.2;
-}
-
-.cal-card p {
-  margin: 2px 0;
-  font-size: 0.85rem;
-  opacity: 0.9;
-}
-
-#cal-voltar {
-  margin-top: 30px;
-  padding: 10px 26px;
-  border-radius: 30px;
-  border: 1px solid rgba(255,255,255,0.15);
-  background: rgba(255,255,255,0.06);
-  color: #eaeaea;
-  font-weight: 500;
-  cursor: pointer;
-  backdrop-filter: blur(6px);
-  transition: all 0.25s ease;
-}
-
-#cal-voltar:hover {
-  background: rgba(255,255,255,0.15);
-  transform: translateY(-3px);
-  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-}
-
-#cal-voltar:active {
-  transform: scale(0.95);
-}
+btnBuscar.addEventListener("click", () => {
+  buscarAnimes();
+});
