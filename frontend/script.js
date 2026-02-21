@@ -762,7 +762,6 @@ function renderCalendario(animes) {
       </div>
     `;
 
-    // opcional: clicar abre detalhes do mesmo modal de detalhes que você já tem
     card.onclick = () => abrirDetalhes(anime);
 
     calLista.appendChild(card);
@@ -782,3 +781,4 @@ const btnBuscar = document.getElementById("btn-buscar");
 btnBuscar.addEventListener("click", () => {
   buscarAnimes();
 });
+
