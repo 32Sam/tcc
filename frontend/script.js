@@ -15,6 +15,7 @@ let selectedGenres = [];
 const activeFilters = document.getElementById("active-filters");
 const filtersList = document.getElementById("filters-list");
 const clearFiltersBtn = document.getElementById("clear-filters");
+const btnTopo = document.getElementById("btn-topo");
 
 
 /* MAPA DE GÊNEROS */
@@ -84,6 +85,7 @@ clearFiltersBtn.addEventListener("click", () => {
   genreButtons.forEach(btn => btn.classList.remove("ativo"));
   atualizarFiltrosAtivos();
   buscarAnimes();
+  btnTopo.classList.remove("ativo");
 });
 
 /* ===============================
@@ -128,7 +130,8 @@ async function buscarAnimes() {
     .filter(Boolean)
     .join(",");
 
-  let url = `https://api.jikan.moe/v4/anime?limit=14&sfw=true`;
+  let url = `https://api.jikan.moe/v4/anime?limit=18&sfw=true`; /* LIMITE DE RESULTADOS
+  DE ANIMES NA TELA - Tentar depois permitir mais de 18 (criar função para carregar mais) */
   if (termo) url += `&q=${encodeURIComponent(termo)}`;
   if (genreIds) url += `&genres=${genreIds}`;
 
@@ -166,6 +169,7 @@ function renderizarResultados(animes) {
   });
 
   catalog.scrollIntoView({ behavior: "smooth" });
+  btnTopo.classList.add("ativo");
 }
 
 /* ===============================
@@ -617,7 +621,7 @@ function voltar() {
     modalTop.style.display = "none";
     modalAno.style.display = "flex";
     telaAtual = "ano";
-    return; // aqui não libera ainda
+    return;
   }
 
   else if (telaAtual === "ano") {
@@ -780,5 +784,87 @@ const btnBuscar = document.getElementById("btn-buscar");
 
 btnBuscar.addEventListener("click", () => {
   buscarAnimes();
+});
+
+
+
+async function recomendarPorHumor(mood) {
+
+  const moodGenres = {
+    feliz: 4,
+    triste: 8,
+    animado: 1,
+    romantico: 22,
+    reflexivo: 36,
+    aleatorio: null
+  };
+
+  // 🔥 ANIMAÇÃO DE SAÍDA
+  const modalContent = modalHumor.querySelector(".modal-content");
+  modalContent.style.transform = "scale(0.9)";
+  modalContent.style.opacity = "0";
+
+  // espera animação terminar
+  await new Promise(resolve => setTimeout(resolve, 300));
+
+  modalHumor.style.display = "none";
+  catalog.innerHTML = "<p style='color:white'>Buscando recomendação...</p>";
+
+  let url = "https://api.jikan.moe/v4/anime?limit=25&sfw=true";
+
+  if (moodGenres[mood]) {
+    url += `&genres=${moodGenres[mood]}`;
+  }
+
+  const res = await fetch(url);
+  const data = await res.json();
+  const animes = data.data || [];
+
+  if (!animes.length) {
+    catalog.innerHTML = "<p style='color:white'>Nenhuma recomendação encontrada.</p>";
+    return;
+  }
+
+  const randomAnime = animes[Math.floor(Math.random() * animes.length)];
+
+  renderizarResultados([randomAnime]);
+  abrirDetalhes(randomAnime);
+
+  bloquearBotoesMenu(false);
+}
+
+
+const btnHumor = document.getElementById("btn-humor");
+const modalHumor = document.getElementById("modal-humor");
+const fecharHumor = document.getElementById("fechar-humor");
+
+btnHumor.onclick = () => {
+  bloquearBotoesMenu(true);
+  modalHumor.style.display = "flex";
+};
+
+fecharHumor.onclick = () => {
+  modalHumor.style.display = "none";
+  bloquearBotoesMenu(false);
+};
+
+document.querySelectorAll(".mood-grid button").forEach(btn => {
+  btn.addEventListener("click", () => {
+    recomendarPorHumor(btn.dataset.mood);
+  });
+});
+
+
+/* ===============================
+   BOTÃO VOLTAR AO TOPO
+   =============================== */
+
+btnTopo.addEventListener("click", () => {
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth"
+  });
+
+  btnTopo.classList.remove("ativo");
 });
 
