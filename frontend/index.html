@@ -11,6 +11,7 @@
   <button id="btn-top-animes">Ranking Anual</button>
   <button id="btn-popularidade">Análise de Popularidade</button>
   <button id="btn-calendario">Calendário</button>
+  <button id="btn-humor">Descobrir pelo Humor</button>
 </div>
 
   <main class="hero" id="hero">
@@ -28,6 +29,7 @@
     </div>
   </main>
 
+  
   <section class="catalog" id="catalog"></section>
 
   <!-- MODAL FILTROS -->
@@ -55,7 +57,6 @@
     </div>
   </div>
 
-  <!-- MODAL DETALHES -->
 <!-- MODAL DETALHES -->
 <div class="modal" id="modal-detalhes">
   <div class="modal-content modal-detalhes-content">
@@ -155,9 +156,29 @@
     </div>
   </div>
 
+  <div id="modal-humor" class="modal">
+  <div class="modal-content">
+    <h2>Como você está se sentindo hoje?</h2>
+
+    <div class="mood-grid">
+      <button data-mood="feliz">😄 Feliz</button>
+      <button data-mood="triste">😢 Triste</button>
+      <button data-mood="animado">🔥 Animado</button>
+      <button data-mood="romantico">❤️ Romântico</button>
+      <button data-mood="reflexivo">🌙 Reflexivo</button>
+      <button data-mood="aleatorio">🎲 Surpresa</button>
+    </div>
+
+    <button class="btn-voltar" id="fechar-humor">Fechar</button>
+  </div>
+</div>
+
   <!-- Scripts na ordem correta -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <button id="btn-topo" class="btn-topo">⬆</button>
   <script src="script.js"></script>
+
+
 
 </body>
 </html>
