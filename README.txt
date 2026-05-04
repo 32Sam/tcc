@@ -1,4 +1,4 @@
-# Catálogo de Animes
+# DESENVOLVIMENTO DE PLATAFORMA DIGITAL PARA BUSCA E DESCOBERTA DE ANIMES
 
 Aplicação web desenvolvida como projeto de TCC com foco em descoberta e recomendação de animes através de pesquisa interativa, filtros e visualização de dados.
 
