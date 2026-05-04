@@ -5,11 +5,11 @@ html, body {
 
 /* Background */
 body {
-  background-image: url("https://github.com/32Sam/tcc/blob/main/images/bg.jpg?raw=true");
+  background-image: url("https://raw.githubusercontent.com/32Sam/tcc/refs/heads/main/images/bg.jpg");
   background-position: center;
   background-size: cover;
   background-repeat: no-repeat;
-  background-attachment: fixed; /* 👈 ESSA LINHA RESOLVE */
+  background-attachment: fixed;
   overflow-x: hidden;
 }
 
@@ -124,7 +124,6 @@ body::before {
   }
 }
 
-/* MODAL */
 /* MODAL PADRÃO */
 .modal {
   position: fixed;
@@ -223,65 +222,78 @@ body::before {
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 20px;
-  padding: 40px;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 28px;
+  padding: 60px 80px;
 }
 
 .card {
-  background: #111;
-  border-radius: 12px;
+  position: relative;
+  border-radius: 18px;
   overflow: hidden;
-  color: white;
   cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .card img {
   width: 100%;
-  height: 250px;
+  height: 270px;
   object-fit: cover;
+  transition: transform 0.4s ease;
 }
 
+/* Overlay escuro suave */
+.card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.8), rgba(0,0,0,0.1));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+/* Título sobre a imagem */
 .card h3 {
-  padding: 10px;
-  text-align: center;
-  font-size: 1rem;
+  position: absolute;
+  bottom: 15px;
+  left: 15px;
+  right: 15px;
+  color: white;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: left;
+  z-index: 2;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.3s ease;
 }
 
-/* BOTÃO VOLTAR AO TOPO */
-#btn-topo {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  border: none;
-  cursor: pointer;
-  background: white;
-  color: black;
-  font-size: 22px;
-  font-weight: bold;
-  display: none;
-  z-index: 30;
+/* Hover estilo streaming */
+.card:hover {
+  transform: scale(1.05);
+  z-index: 5;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.6);
 }
 
-/* ===============================
-   ✅ MODAL DETALHES (APENAS INCLUSÃO/ATUALIZAÇÃO)
-   - badge circular de score
-   - fundo com leve gradiente
-   - efeito glassmorphism
-   - scroll customizado na sinopse
-=============================== */
+.card:hover img {
+  transform: scale(1.1);
+}
 
-/* mantém sua classe, só melhora visual */
+.card:hover::after {
+  opacity: 1;
+}
+
+.card:hover h3 {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 .modal-detalhes-content {
   width: 900px;
   max-width: 95%;
   border-radius: 20px;
   padding: 40px;
 
-  /* leve gradiente (você pediu) */
   background: linear-gradient(145deg, rgba(20,20,20,0.92), rgba(12,12,12,0.85));
 
   /* glass */
@@ -298,7 +310,7 @@ body::before {
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-/* seu novo header do modal (título + badge) */
+/* header do modal (título + badge) */
 .modal-header {
   display: flex;
   align-items: center;
@@ -333,7 +345,7 @@ body::before {
   color: #f5c518;
 }
 
-/* corpo e imagem (mantém suas classes) */
+/* corpo e imagem */
 .detalhes-body {
   display: flex;
   gap: 40px;
@@ -411,10 +423,6 @@ body::before {
   transform: scale(1.05);
 }
 
-/* ===============================
-   RESTO DO SEU CSS ORIGINAL (SEM MEXER)
-=============================== */
-
 .active-filters {
   margin-top: 15px;
   display: flex;
@@ -437,19 +445,6 @@ body::before {
   padding: 6px 10px;
   border-radius: 12px;
   cursor: pointer;
-}
-
-#btn-top-animes {
-  position: fixed;
-  top: 15px;
-  left: 15px;
-  padding: 10px 14px;
-  background: gold;
-  border-radius: 8px;
-  font-weight: bold;
-  border: none;
-  cursor: pointer;
-  z-index: 50;
 }
 
 #lista-anos button,
@@ -531,19 +526,6 @@ body::before {
   text-decoration: underline;
 }
 
-#btn-popularidade {
-  position: fixed;
-  top: 15px;
-  left: 150px;
-  padding: 10px 14px;
-  background: gold;
-  border-radius: 8px;
-  font-weight: bold;
-  border: none;
-  cursor: pointer;
-  z-index: 50;
-}
-
 .grafico-pizza-pop {
   margin-top: 30px;
   max-width: 400px;
@@ -579,21 +561,6 @@ body::before {
   display: flex;
   justify-content: center;
   align-items: center;
-}
-
-/* ===== BOTÃO CALENDÁRIO ===== */
-#btn-calendario {
-  position: fixed;
-  top: 15px;
-  right: 15px;          /* fica no canto direito */
-  left: auto;           /* garante que não use o left */
-  padding: 10px 14px;
-  background: #1dcaff;
-  border-radius: 8px;
-  font-weight: bold;
-  border: none;
-  cursor: pointer;
-  z-index: 50;
 }
 
 /* ===== MODAL CALENDÁRIO ===== */
@@ -726,3 +693,198 @@ body::before {
 #cal-voltar:active {
   transform: scale(0.95);
 }
+
+/* BOTÕES SUPERIORES PREMIUM */
+
+#btn-top-animes,
+#btn-popularidade,
+#btn-calendario {
+
+  position: fixed;
+  top: 20px;
+  padding: 8px 18px;
+  border-radius: 30px;
+
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(10px);
+
+  border: 1px solid rgba(255,255,255,0.15);
+  color: #e6e6e6;
+
+  font-size: 0.85rem;
+  font-weight: 500;
+
+  cursor: pointer;
+  transition: all 0.25s ease;
+  z-index: 50;
+}
+
+/* POSIÇÃO */
+
+#btn-top-animes { left: 25px; }
+#btn-popularidade { left: 190px; }
+#btn-calendario { right: 25px; }
+
+/* HOVER SOFISTICADO */
+
+#btn-top-animes:hover,
+#btn-popularidade:hover,
+#btn-calendario:hover {
+
+  background: rgba(255, 255, 255, 0.18);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+}
+
+/* Efeito ativo ao clicar */
+
+#btn-top-animes:active,
+#btn-popularidade:active,
+#btn-calendario:active {
+  transform: scale(0.96);
+}
+
+
+#btn-humor {
+  position: fixed;
+  top: 20px;
+  right: 160px;
+
+  padding: 8px 20px;
+  border-radius: 30px;
+
+  background: linear-gradient(135deg, #7f5af0, #5f3dc4);
+  color: white;
+  font-size: 0.85rem;
+  font-weight: 600;
+
+  border: none;
+  cursor: pointer;
+  z-index: 50;
+
+  box-shadow: 0 0 20px rgba(127,90,240,0.4);
+  transition: all 0.3s ease;
+}
+
+#btn-humor:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 30px rgba(127,90,240,0.7);
+}
+
+#btn-humor:active {
+  transform: scale(0.95);
+}
+
+.mood-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin: 25px 0;
+}
+
+.mood-grid button {
+  padding: 12px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  background: rgba(255,255,255,0.08);
+  color: white;
+  transition: 0.25s ease;
+}
+
+.mood-grid button:hover {
+  background: rgba(255,255,255,0.18);
+  transform: translateY(-2px);
+}
+
+#modal-humor {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+
+  background: rgba(0, 0, 0, 0.45); /* menos preto */
+  backdrop-filter: blur(8px);      /* blur global */
+  z-index: 90;
+}
+
+
+
+#modal-humor .modal-content {
+  width: 700px;
+  max-width: 95%;
+  padding: 50px 60px;
+  border-radius: 28px;
+
+  background: rgba(18, 18, 22, 0.65);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+
+  border: 1px solid rgba(255,255,255,0.06);
+
+  box-shadow:
+    0 40px 80px rgba(0,0,0,0.65),
+    0 0 0 1px rgba(255,255,255,0.03);
+
+  animation: portalEnter 0.4s ease;
+}
+
+@keyframes portalEnter {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+
+
+/* BOTÃO VOLTAR AO TOPO */
+.btn-topo {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+
+  width: 48px;
+  height: 48px;
+
+  border-radius: 50%;
+  border: none;
+
+  background: linear-gradient(135deg, #f5c518, #ffdf60);
+  color: black;
+  font-size: 1.2rem;
+  font-weight: bold;
+
+  cursor: pointer;
+  z-index: 200;
+
+  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+  transition: all 0.3s ease;
+
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(20px);
+}
+
+/* Quando ativo */
+.btn-topo.ativo {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.btn-topo:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 15px 35px rgba(0,0,0,0.7);
+}
+
+.btn-topo:active {
+  transform: scale(0.95);
+}
+
