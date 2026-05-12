@@ -4,6 +4,11 @@ Aplicação web desenvolvida como projeto de TCC com foco em descoberta e recome
 
 ---
 
+Vídeo demonstrativo da plataforma no Youtube:
+https://youtu.be/DEscux9V-L0
+
+---
+
 ## Funcionalidades
 
 - Busca de animes pelo nome
